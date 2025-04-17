@@ -21,6 +21,14 @@ YCSB
 [![Build Status](https://travis-ci.org/brianfrankcooper/YCSB.png?branch=master)](https://travis-ci.org/brianfrankcooper/YCSB)
 
 
+THIS IS THE DISAGGREGATED BRANCH
+--------------------------------
+
+Should be pretty agnostic as long as memcached is compiled and using dmalloc.
+
+Also the instructions to get and build maven and mongodb are updated.
+The old branch (master) is like ancient.
+
 
 Links
 -----

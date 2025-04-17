@@ -21,6 +21,17 @@ This section describes how to run YCSB on memcached.
 
 ## 1. Install and start memcached service on the host(s)
 
+Build this manually
+```sh
+git clone git@github.com:kaustav-goswami/memcached.git
+cd memcached
+# If compiling for the master node, then user MASTER=1. This mounts the mmapped
+# region with PROT_READ | PROT_WRITE and only allows the master to write into
+# the shared memory range.
+make MASTER=1
+./memcached -p 11211 -d
+```
+
 Debian / Ubuntu:
 
     sudo apt-get install memcached
@@ -31,25 +42,46 @@ RedHat / CentOS:
 
 ## 2. Install Java and Maven
 
-See step 2 in [`../mongodb/README.md`](../mongodb/README.md).
+```sh
+sudo apt-get install gnupg curl
+curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | \
+   sudo gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg \
+   --dearmor
+echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+sudo apt-get update
+sudo apt-get install -y mongodb-org
+sudo apt install rpm
+wget http://download.oracle.com/otn-pub/java/jdk/7u40-b43/jdk-7u40-linux-x64.rpm\?AuthParam\=11232426132 -o jdk-7u40-linux-x64.rpm
+rpm -Uvh jdk-7u40-linux-x64.rpm
+wget https://dlcdn.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz
+gzip -d apache-maven-3.9.9-bin.tar.gz
+tar xvf apache-maven-3.9.9-bin.tar
+cd apache-maven-3.9.9/bin
+export PATH=`pwd`:${PATH}
+cd ../..
+```
 
 ## 3. Set up YCSB
 
-Git clone YCSB and compile:
+Compile:
 
-    git clone http://github.com/brianfrankcooper/YCSB.git
-    cd YCSB
-    mvn -pl site.ycsb:memcached-binding -am clean package
+```sh
+git clone git@github.com:kaustav-goswami/YCSB.git
+cd YCSB
+mvn -pl site.ycsb:memcached-binding -am clean package
+```
 
 ## 4. Load data and run tests
 
 Load the data:
-
-    ./bin/ycsb load memcached -s -P workloads/workloada > outputLoad.txt
+```sh
+./bin/ycsb load memcached -s -P workloads/workloada -p "memcached.hosts=127.0.0.1" > outputLoad.txt
+```
 
 Run the workload test:
-
-    ./bin/ycsb run memcached -s -P workloads/workloada > outputRun.txt
+```sh
+./bin/ycsb run memcached -s -P workloads/workloada -p "memcached.hosts=127.0.0.1" > outputRun.txt
+```
 
 ## 5. memcached Connection Parameters
 
