@@ -41,6 +41,8 @@ Building
 git clone https://github.com/kaustav-goswami/memcached.git
 cd memcached
 git checkout disaggregated
+./autogen.sh
+./configure
 make -j32
 cd ..
 
