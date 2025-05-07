@@ -20,7 +20,6 @@ YCSB
 ====================================
 [![Build Status](https://travis-ci.org/brianfrankcooper/YCSB.png?branch=master)](https://travis-ci.org/brianfrankcooper/YCSB)
 
-
 THIS IS THE DISAGGREGATED BRANCH
 --------------------------------
 
@@ -29,6 +28,57 @@ Should be pretty agnostic as long as memcached is compiled and using dmalloc.
 Also the instructions to get and build maven and mongodb are updated.
 The old branch (master) is like ancient.
 
+Instructions on how to run YCSB on disaggregated memory
+-------------------------------------------------------
+
+Follow these instructions on building this infrastructure.
+The infrastructure is built on a specific version of maven and the JARs are already included in the repository.
+
+Building
+--------
+```sh
+# For memcached
+git clone https://github.com/kaustav-goswami/memcached.git
+cd memcached
+git checkout disaggregated
+make -j32
+cd ..
+
+# For YCSB
+git clone https://github.com/kaustav-goswami/YCSB.git
+cd YCSB
+git checkout disaggregated
+cp ext/apache-maven-3.9.9-bin.tar .
+tar xvf apache-maven-3.9.9-bin.tar
+cp ext/jdk-7u40-linux-x64.rpm .
+cd apache-maven-3.9.9/bin
+export PATH=$PATH:`pwd`
+cd ../..
+```
+
+To start memcached and test YCSB:
+```sh
+# On all the participant hosts start memcached
+cd memcached
+./memcached -p 11211 -d
+```
+
+On any of the hosts, to perform YCSB, just
+```sh
+cd YCSB
+./bin/ycsb run memcached -s -P workloads/workloada -p "memcached.hosts=127.0.0.1"
+./bin/ycsb run memcached -s -P workloads/workloadb -p "memcached.hosts=127.0.0.1"
+./bin/ycsb run memcached -s -P workloads/workloadc -p "memcached.hosts=127.0.0.1"
+./bin/ycsb run memcached -s -P workloads/workloadd -p "memcached.hosts=127.0.0.1"
+
+# This one does not print RETURN=OK and has some SCAN errors! Stats are still printed at the end.
+./bin/ycsb run memcached -s -P workloads/workloade -p "memcached.hosts=127.0.0.1"
+
+./bin/ycsb run memcached -s -P workloads/workloadf -p "memcached.hosts=127.0.0.1"
+```
+
+The YCSB code is annotated such that m5 workbegin starts before running a workload.
+An `m5 exit` is dropped to indicate either to switch CPUs or take/restore a checkpoint.
 
 Links
 -----
