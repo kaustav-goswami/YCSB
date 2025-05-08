@@ -62,20 +62,31 @@ To start memcached and test YCSB:
 ```sh
 # On all the participant hosts start memcached
 cd memcached
-./memcached -p 11211 -d
+./memcached -p 11211 -d -u memcache
 ```
 
-On any of the hosts, to perform YCSB, just
+On any of the hosts, to perform YCSB, just:
 ```sh
 cd YCSB
+mvn -pl site.ycsb:memcached-binding -am clean package
+
+./bin/ycsb load memcached -s -P workloads/workloada -p "memcached.hosts=127.0.0.1"
 ./bin/ycsb run memcached -s -P workloads/workloada -p "memcached.hosts=127.0.0.1"
+
+./bin/ycsb load memcached -s -P workloads/workloadb -p "memcached.hosts=127.0.0.1"
 ./bin/ycsb run memcached -s -P workloads/workloadb -p "memcached.hosts=127.0.0.1"
+
+./bin/ycsb load memcached -s -P workloads/workloadc -p "memcached.hosts=127.0.0.1"
 ./bin/ycsb run memcached -s -P workloads/workloadc -p "memcached.hosts=127.0.0.1"
+
+./bin/ycsb load memcached -s -P workloads/workloadd -p "memcached.hosts=127.0.0.1"
 ./bin/ycsb run memcached -s -P workloads/workloadd -p "memcached.hosts=127.0.0.1"
 
 # This one does not print RETURN=OK and has some SCAN errors! Stats are still printed at the end.
+./bin/ycsb load memcached -s -P workloads/workloade -p "memcached.hosts=127.0.0.1"
 ./bin/ycsb run memcached -s -P workloads/workloade -p "memcached.hosts=127.0.0.1"
 
+./bin/ycsb load memcached -s -P workloads/workloadf -p "memcached.hosts=127.0.0.1"
 ./bin/ycsb run memcached -s -P workloads/workloadf -p "memcached.hosts=127.0.0.1"
 ```
 
