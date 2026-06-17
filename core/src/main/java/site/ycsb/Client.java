@@ -307,23 +307,7 @@ public final class Client {
 
     System.err.println("Starting test.");
 
-    // kg: Marking this point as ROI begin.
-    // Ignoring the JAVA version of m5ops and using system command. Should
-    // definitely comment this line.
-    // System.err.println("Haven't used dead languages in years!");
-    // Start of the checkpoint/cpu switch mark this point.
-    Process process;
-
-    try {
-      process = Runtime.getRuntime().exec(String.format("m5 exit;"));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    try {
-      process = Runtime.getRuntime().exec(String.format("m5 workbegin 0 0;"));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    // kg: removing m5 commands for the qemu version.
 
     final CountDownLatch completeLatch = new CountDownLatch(threadcount);
 
@@ -380,16 +364,6 @@ public final class Client {
       en = System.currentTimeMillis();
     }
 
-    // XXX
-    // kg: Marking this point as ROI end. This ignores the termination part
-    // Ignoring the JAVA version of m5ops and using system command. Should
-    // definitely comment this line.
-    try {
-      process = 
-        Runtime.getRuntime().exec(String.format("m5 workend 0 0;"));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
     try {
       try (final TraceScope span = tracer.newScope(CLIENT_CLEANUP_SPAN)) {
 

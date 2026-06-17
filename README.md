@@ -90,8 +90,7 @@ mvn -pl site.ycsb:memcached-binding -am clean package
 ./bin/ycsb run memcached -s -P workloads/workloadf -p "memcached.hosts=127.0.0.1"
 ```
 
-The YCSB code is annotated such that m5 workbegin starts before running a workload.
-An `m5 exit` is dropped to indicate either to switch CPUs or take/restore a checkpoint.
+This version is compatible with QEMU.
 
 Links
 -----
