@@ -277,6 +277,9 @@ public final class Client {
   public static void main(String[] args) {
     Properties props = parseArguments(args);
 
+    boolean dotransactions = Boolean.valueOf(
+        props.getProperty(DO_TRANSACTIONS_PROPERTY, String.valueOf(true)));
+
     boolean status = Boolean.valueOf(props.getProperty(STATUS_PROPERTY, String.valueOf(false)));
     String label = props.getProperty(LABEL_PROPERTY, "");
 
@@ -306,24 +309,6 @@ public final class Client {
     initWorkload(props, warningthread, workload, tracer);
 
     System.err.println("Starting test.");
-
-    // kg: Marking this point as ROI begin.
-    // Ignoring the JAVA version of m5ops and using system command. Should
-    // definitely comment this line.
-    // System.err.println("Haven't used dead languages in years!");
-    // Start of the checkpoint/cpu switch mark this point.
-    Process process;
-
-    try {
-      process = Runtime.getRuntime().exec(String.format("m5 exit;"));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    try {
-      process = Runtime.getRuntime().exec(String.format("m5 workbegin 0 0;"));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
 
     final CountDownLatch completeLatch = new CountDownLatch(threadcount);
 
@@ -355,6 +340,14 @@ public final class Client {
         threads.put(new Thread(tracer.wrap(client, "ClientThread")), client);
       }
 
+      // gem5 ROI annotations apply to the run (transaction) phase only, not load.
+      if (dotransactions) {
+        // gem5: checkpoint or CPU switch after setup, before the measured workload.
+        m5("exit");
+        // gem5: ROI begin — client threads executing DB operations only.
+        m5("workbegin 0 0");
+      }
+
       st = System.currentTimeMillis();
 
       for (Thread t : threads.keySet()) {
@@ -378,18 +371,13 @@ public final class Client {
       }
 
       en = System.currentTimeMillis();
+
+      if (dotransactions) {
+        // gem5: ROI end — workload threads finished; cleanup is outside ROI.
+        m5("workend 0 0");
+      }
     }
 
-    // XXX
-    // kg: Marking this point as ROI end. This ignores the termination part
-    // Ignoring the JAVA version of m5ops and using system command. Should
-    // definitely comment this line.
-    try {
-      process = 
-        Runtime.getRuntime().exec(String.format("m5 workend 0 0;"));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
     try {
       try (final TraceScope span = tracer.newScope(CLIENT_CLEANUP_SPAN)) {
 
@@ -706,5 +694,17 @@ public final class Client {
     }
 
     return props;
+  }
+
+  /**
+   * Invoke a gem5 m5 utility command (e.g. exit, workbegin, workend).
+   * Uses the m5 CLI rather than libm5.a since YCSB runs on the JVM.
+   */
+  private static void m5(String command) {
+    try {
+      Runtime.getRuntime().exec("m5 " + command + ";");
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 }
