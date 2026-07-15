@@ -380,6 +380,8 @@ public final class Client {
 
       // gem5: ROI end — workload threads finished; cleanup is outside ROI.
       m5("workend 0 0");
+      // exit  gem5 here
+      m5("exit");
     }
 
     try {
