@@ -140,6 +140,12 @@ public final class Client {
   public static final String DO_TRANSACTIONS_PROPERTY = "dotransactions";
 
   /**
+   * Whether to take a gem5 checkpoint (m5 exit) after setup and before the ROI.
+   * Set via -checkpoint on the command line or -p gem5.checkpoint=true.
+   */
+  public static final String GEM5_CHECKPOINT_PROPERTY = "gem5.checkpoint";
+
+  /**
    * Whether or not to show status during run.
    */
   public static final String STATUS_PROPERTY = "status";
@@ -184,6 +190,7 @@ public final class Client {
     System.out.println("          values in the propertyfile");
     System.out.println("  -s:  show status during run (default: no status)");
     System.out.println("  -l label:  use label for status (e.g. to label one experiment out of a whole batch)");
+    System.out.println("  -checkpoint: take a gem5 checkpoint (m5 exit) after setup and before the ROI");
     System.out.println("");
     System.out.println("Required properties:");
     System.out.println("  " + WORKLOAD_PROPERTY + ": the name of the workload class to use (e.g. " +
@@ -277,8 +284,8 @@ public final class Client {
   public static void main(String[] args) {
     Properties props = parseArguments(args);
 
-    boolean dotransactions = Boolean.valueOf(
-        props.getProperty(DO_TRANSACTIONS_PROPERTY, String.valueOf(true)));
+    boolean gem5Checkpoint = Boolean.valueOf(
+        props.getProperty(GEM5_CHECKPOINT_PROPERTY, String.valueOf(false)));
 
     boolean status = Boolean.valueOf(props.getProperty(STATUS_PROPERTY, String.valueOf(false)));
     String label = props.getProperty(LABEL_PROPERTY, "");
@@ -340,13 +347,12 @@ public final class Client {
         threads.put(new Thread(tracer.wrap(client, "ClientThread")), client);
       }
 
-      // gem5 ROI annotations apply to the run (transaction) phase only, not load.
-      if (dotransactions) {
-        // gem5: checkpoint or CPU switch after setup, before the measured workload.
+      // gem5: optional checkpoint after setup (run); load omits -checkpoint.
+      if (gem5Checkpoint) {
         m5("exit");
-        // gem5: ROI begin — client threads executing DB operations only.
-        m5("workbegin 0 0");
       }
+      // gem5: ROI begin — client threads executing DB operations only.
+      m5("workbegin 0 0");
 
       st = System.currentTimeMillis();
 
@@ -372,10 +378,8 @@ public final class Client {
 
       en = System.currentTimeMillis();
 
-      if (dotransactions) {
-        // gem5: ROI end — workload threads finished; cleanup is outside ROI.
-        m5("workend 0 0");
-      }
+      // gem5: ROI end — workload threads finished; cleanup is outside ROI.
+      m5("workend 0 0");
     }
 
     try {
@@ -609,6 +613,9 @@ public final class Client {
           System.exit(0);
         }
         props.setProperty(LABEL_PROPERTY, args[argindex]);
+        argindex++;
+      } else if (args[argindex].compareTo("-checkpoint") == 0) {
+        props.setProperty(GEM5_CHECKPOINT_PROPERTY, String.valueOf(true));
         argindex++;
       } else if (args[argindex].compareTo("-P") == 0) {
         argindex++;
