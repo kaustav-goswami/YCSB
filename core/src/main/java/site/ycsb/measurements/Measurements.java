@@ -32,6 +32,7 @@ public class Measurements {
    * All supported measurement types are defined in this enum.
    */
   public enum MeasurementType {
+    COUNT,
     HISTOGRAM,
     HDRHISTOGRAM,
     HDRHISTOGRAM_AND_HISTOGRAM,
@@ -41,7 +42,11 @@ public class Measurements {
   }
 
   public static final String MEASUREMENT_TYPE_PROPERTY = "measurementtype";
-  private static final String MEASUREMENT_TYPE_PROPERTY_DEFAULT = "hdrhistogram";
+  /**
+   * Default for this gem5/disaggregated fork: count ops only (no latency histograms).
+   * No command-line flag is required; m5 ROI stats provide timing.
+   */
+  private static final String MEASUREMENT_TYPE_PROPERTY_DEFAULT = "count";
 
   public static final String MEASUREMENT_INTERVAL = "measurement.interval";
   private static final String MEASUREMENT_INTERVAL_DEFAULT = "op";
@@ -79,10 +84,13 @@ public class Measurements {
     opToMesurementMap = new ConcurrentHashMap<>();
     opToIntendedMesurementMap = new ConcurrentHashMap<>();
 
-    this.props = props;
+    this.props = (props == null) ? new Properties() : props;
 
     String mTypeString = this.props.getProperty(MEASUREMENT_TYPE_PROPERTY, MEASUREMENT_TYPE_PROPERTY_DEFAULT);
     switch (mTypeString) {
+    case "count":
+      measurementType = MeasurementType.COUNT;
+      break;
     case "histogram":
       measurementType = MeasurementType.HISTOGRAM;
       break;
@@ -123,6 +131,8 @@ public class Measurements {
 
   private OneMeasurement constructOneMeasurement(String name) {
     switch (measurementType) {
+    case COUNT:
+      return new OneMeasurementCount(name);
     case HISTOGRAM:
       return new OneMeasurementHistogram(name, props);
     case HDRHISTOGRAM:

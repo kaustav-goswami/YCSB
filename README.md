@@ -90,8 +90,9 @@ mvn -pl site.ycsb:memcached-binding -am clean package
 ./bin/ycsb run memcached -s -P workloads/workloadf -p "memcached.hosts=127.0.0.1"
 ```
 
-The YCSB code is annotated such that m5 workbegin starts before running a workload.
-An `m5 exit` is dropped to indicate either to switch CPUs or take/restore a checkpoint.
+The YCSB code is annotated such that m5 workbegin/workend bracket the workload ROI.
+Use `-checkpoint` on run to issue `m5 exit` after setup (for checkpoint/CPU switch).
+Op counting is the default (no `-p measurementtype=...` needed); use gem5/m5 stats for timing.
 
 Links
 -----

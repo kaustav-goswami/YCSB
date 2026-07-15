@@ -688,7 +688,6 @@ public class CoreWorkload extends Workload {
    */
   protected void verifyRow(String key, HashMap<String, ByteIterator> cells) {
     Status verifyStatus = Status.OK;
-    long startTime = System.nanoTime();
     if (!cells.isEmpty()) {
       for (Map.Entry<String, ByteIterator> entry : cells.entrySet()) {
         if (!entry.getValue().toString().equals(buildDeterministicValue(key, entry.getKey()))) {
@@ -700,8 +699,7 @@ public class CoreWorkload extends Workload {
       // This assumes that null data is never valid
       verifyStatus = Status.ERROR;
     }
-    long endTime = System.nanoTime();
-    measurements.measure("VERIFY", latencyMicros(startTime, endTime));
+    measurements.measure("VERIFY", 0);
     measurements.reportStatus("VERIFY", verifyStatus);
   }
 
@@ -776,21 +774,16 @@ public class CoreWorkload extends Workload {
 
     HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
 
-
-    long ist = measurements.getIntendedStartTimeNs();
-    long st = System.nanoTime();
     db.read(table, keyname, fields, cells);
 
     db.update(table, keyname, values);
-
-    long en = System.nanoTime();
 
     if (dataintegrity) {
       verifyRow(keyname, cells);
     }
 
-    measurements.measure("READ-MODIFY-WRITE", latencyMicros(st, en));
-    measurements.measureIntended("READ-MODIFY-WRITE", latencyMicros(ist, en));
+    measurements.measure("READ-MODIFY-WRITE", 0);
+    measurements.measureIntended("READ-MODIFY-WRITE", 0);
   }
 
   public void doTransactionScan(DB db) {
@@ -894,16 +887,5 @@ public class CoreWorkload extends Workload {
       operationchooser.addValue(readmodifywriteproportion, "READMODIFYWRITE");
     }
     return operationchooser;
-  }
-
-  private static int latencyMicros(long startNanos, long endNanos) {
-    long deltaMicros = (endNanos - startNanos) / 1000L;
-    if (deltaMicros < 0L) {
-      return 0;
-    }
-    if (deltaMicros > Integer.MAX_VALUE) {
-      return Integer.MAX_VALUE;
-    }
-    return (int) deltaMicros;
   }
 }

@@ -897,7 +897,6 @@ public class TimeSeriesWorkload extends Workload {
    */
   protected Status verifyRow(final String key, final Map<String, ByteIterator> cells) {
     Status verifyStatus = Status.UNEXPECTED_STATE;
-    long startTime = System.nanoTime();
 
     double value = 0;
     long timestamp = 0;
@@ -917,9 +916,7 @@ public class TimeSeriesWorkload extends Workload {
     if (validationFunction(key, timestamp, validationTags) == value) {
       verifyStatus = Status.OK;
     }
-    long endTime = System.nanoTime();
-    long verifyMicros = (endTime - startTime) / 1000L;
-    measurements.measure("VERIFY", verifyMicros < 0L ? 0 : (int) Math.min(verifyMicros, Integer.MAX_VALUE));
+    measurements.measure("VERIFY", 0);
     measurements.reportStatus("VERIFY", verifyStatus);
     return verifyStatus;
   }

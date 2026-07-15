@@ -115,11 +115,8 @@ public class DBWrapper extends DB {
    */
   public void cleanup() throws DBException {
     try (final TraceScope span = tracer.newScope(scopeStringCleanup)) {
-      long ist = measurements.getIntendedStartTimeNs();
-      long st = System.nanoTime();
       db.cleanup();
-      long en = System.nanoTime();
-      measure("CLEANUP", Status.OK, ist, st, en);
+      measure("CLEANUP", Status.OK);
     }
   }
 
@@ -136,11 +133,8 @@ public class DBWrapper extends DB {
   public Status read(String table, String key, Set<String> fields,
                      Map<String, ByteIterator> result) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
-      long ist = measurements.getIntendedStartTimeNs();
-      long st = System.nanoTime();
       Status res = db.read(table, key, fields, result);
-      long en = System.nanoTime();
-      measure("READ", res, ist, st, en);
+      measure("READ", res);
       measurements.reportStatus("READ", res);
       return res;
     }
@@ -160,18 +154,17 @@ public class DBWrapper extends DB {
   public Status scan(String table, String startkey, int recordcount,
                      Set<String> fields, Vector<HashMap<String, ByteIterator>> result) {
     try (final TraceScope span = tracer.newScope(scopeStringScan)) {
-      long ist = measurements.getIntendedStartTimeNs();
-      long st = System.nanoTime();
       Status res = db.scan(table, startkey, recordcount, fields, result);
-      long en = System.nanoTime();
-      measure("SCAN", res, ist, st, en);
+      measure("SCAN", res);
       measurements.reportStatus("SCAN", res);
       return res;
     }
   }
 
-  private void measure(String op, Status result, long intendedStartTimeNanos,
-                       long startTimeNanos, long endTimeNanos) {
+  /**
+   * Count the operation. Latency timing is omitted for gem5; m5 ROI stats cover that.
+   */
+  private void measure(String op, Status result) {
     String measurementName = op;
     if (result == null || !result.isOk()) {
       if (this.reportLatencyForEachError ||
@@ -181,21 +174,9 @@ public class DBWrapper extends DB {
         measurementName = op + "-FAILED";
       }
     }
-    // Clamp to >= 0: gem5 (and some guest clocks) can make nanoTime non-monotonic
-    // across checkpoints/CPU switches; negative values corrupt HdrHistogram.
-    measurements.measure(measurementName, latencyMicros(startTimeNanos, endTimeNanos));
-    measurements.measureIntended(measurementName, latencyMicros(intendedStartTimeNanos, endTimeNanos));
-  }
-
-  private static int latencyMicros(long startNanos, long endNanos) {
-    long deltaMicros = (endNanos - startNanos) / 1000L;
-    if (deltaMicros < 0L) {
-      return 0;
-    }
-    if (deltaMicros > Integer.MAX_VALUE) {
-      return Integer.MAX_VALUE;
-    }
-    return (int) deltaMicros;
+    // Latency value is unused by the default "count" measurement type.
+    measurements.measure(measurementName, 0);
+    measurements.measureIntended(measurementName, 0);
   }
 
   /**
@@ -210,11 +191,8 @@ public class DBWrapper extends DB {
   public Status update(String table, String key,
                        Map<String, ByteIterator> values) {
     try (final TraceScope span = tracer.newScope(scopeStringUpdate)) {
-      long ist = measurements.getIntendedStartTimeNs();
-      long st = System.nanoTime();
       Status res = db.update(table, key, values);
-      long en = System.nanoTime();
-      measure("UPDATE", res, ist, st, en);
+      measure("UPDATE", res);
       measurements.reportStatus("UPDATE", res);
       return res;
     }
@@ -233,11 +211,8 @@ public class DBWrapper extends DB {
   public Status insert(String table, String key,
                        Map<String, ByteIterator> values) {
     try (final TraceScope span = tracer.newScope(scopeStringInsert)) {
-      long ist = measurements.getIntendedStartTimeNs();
-      long st = System.nanoTime();
       Status res = db.insert(table, key, values);
-      long en = System.nanoTime();
-      measure("INSERT", res, ist, st, en);
+      measure("INSERT", res);
       measurements.reportStatus("INSERT", res);
       return res;
     }
@@ -252,11 +227,8 @@ public class DBWrapper extends DB {
    */
   public Status delete(String table, String key) {
     try (final TraceScope span = tracer.newScope(scopeStringDelete)) {
-      long ist = measurements.getIntendedStartTimeNs();
-      long st = System.nanoTime();
       Status res = db.delete(table, key);
-      long en = System.nanoTime();
-      measure("DELETE", res, ist, st, en);
+      measure("DELETE", res);
       measurements.reportStatus("DELETE", res);
       return res;
     }
