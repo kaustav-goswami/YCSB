@@ -701,7 +701,7 @@ public class CoreWorkload extends Workload {
       verifyStatus = Status.ERROR;
     }
     long endTime = System.nanoTime();
-    measurements.measure("VERIFY", (int) (endTime - startTime) / 1000);
+    measurements.measure("VERIFY", latencyMicros(startTime, endTime));
     measurements.reportStatus("VERIFY", verifyStatus);
   }
 
@@ -789,8 +789,8 @@ public class CoreWorkload extends Workload {
       verifyRow(keyname, cells);
     }
 
-    measurements.measure("READ-MODIFY-WRITE", (int) ((en - st) / 1000));
-    measurements.measureIntended("READ-MODIFY-WRITE", (int) ((en - ist) / 1000));
+    measurements.measure("READ-MODIFY-WRITE", latencyMicros(st, en));
+    measurements.measureIntended("READ-MODIFY-WRITE", latencyMicros(ist, en));
   }
 
   public void doTransactionScan(DB db) {
@@ -894,5 +894,16 @@ public class CoreWorkload extends Workload {
       operationchooser.addValue(readmodifywriteproportion, "READMODIFYWRITE");
     }
     return operationchooser;
+  }
+
+  private static int latencyMicros(long startNanos, long endNanos) {
+    long deltaMicros = (endNanos - startNanos) / 1000L;
+    if (deltaMicros < 0L) {
+      return 0;
+    }
+    if (deltaMicros > Integer.MAX_VALUE) {
+      return Integer.MAX_VALUE;
+    }
+    return (int) deltaMicros;
   }
 }

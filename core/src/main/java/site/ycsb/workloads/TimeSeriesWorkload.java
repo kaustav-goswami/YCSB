@@ -918,7 +918,8 @@ public class TimeSeriesWorkload extends Workload {
       verifyStatus = Status.OK;
     }
     long endTime = System.nanoTime();
-    measurements.measure("VERIFY", (int) (endTime - startTime) / 1000);
+    long verifyMicros = (endTime - startTime) / 1000L;
+    measurements.measure("VERIFY", verifyMicros < 0L ? 0 : (int) Math.min(verifyMicros, Integer.MAX_VALUE));
     measurements.reportStatus("VERIFY", verifyStatus);
     return verifyStatus;
   }

@@ -181,10 +181,21 @@ public class DBWrapper extends DB {
         measurementName = op + "-FAILED";
       }
     }
-    measurements.measure(measurementName,
-        (int) ((endTimeNanos - startTimeNanos) / 1000));
-    measurements.measureIntended(measurementName,
-        (int) ((endTimeNanos - intendedStartTimeNanos) / 1000));
+    // Clamp to >= 0: gem5 (and some guest clocks) can make nanoTime non-monotonic
+    // across checkpoints/CPU switches; negative values corrupt HdrHistogram.
+    measurements.measure(measurementName, latencyMicros(startTimeNanos, endTimeNanos));
+    measurements.measureIntended(measurementName, latencyMicros(intendedStartTimeNanos, endTimeNanos));
+  }
+
+  private static int latencyMicros(long startNanos, long endNanos) {
+    long deltaMicros = (endNanos - startNanos) / 1000L;
+    if (deltaMicros < 0L) {
+      return 0;
+    }
+    if (deltaMicros > Integer.MAX_VALUE) {
+      return Integer.MAX_VALUE;
+    }
+    return (int) deltaMicros;
   }
 
   /**

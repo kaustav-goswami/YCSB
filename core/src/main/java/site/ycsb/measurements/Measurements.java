@@ -187,9 +187,10 @@ public class Measurements {
     try {
       OneMeasurement m = getOpMeasurement(operation);
       m.measure(latency);
-    } catch (java.lang.ArrayIndexOutOfBoundsException e) {
-      // This seems like a terribly hacky way to cover up for a bug in the measurement code
-      System.out.println("ERROR: java.lang.ArrayIndexOutOfBoundsException - ignoring and continuing");
+    } catch (IndexOutOfBoundsException e) {
+      // HdrHistogram can throw ArrayIndexOutOfBoundsException (JDK 11+) or
+      // IndexOutOfBoundsException (JDK 8 AtomicLongArray) for out-of-range values.
+      System.out.println("ERROR: " + e + " - ignoring and continuing");
       e.printStackTrace();
       e.printStackTrace(System.out);
     }
@@ -206,9 +207,10 @@ public class Measurements {
     try {
       OneMeasurement m = getOpIntendedMeasurement(operation);
       m.measure(latency);
-    } catch (java.lang.ArrayIndexOutOfBoundsException e) {
-      // This seems like a terribly hacky way to cover up for a bug in the measurement code
-      System.out.println("ERROR: java.lang.ArrayIndexOutOfBoundsException - ignoring and continuing");
+    } catch (IndexOutOfBoundsException e) {
+      // HdrHistogram can throw ArrayIndexOutOfBoundsException (JDK 11+) or
+      // IndexOutOfBoundsException (JDK 8 AtomicLongArray) for out-of-range values.
+      System.out.println("ERROR: " + e + " - ignoring and continuing");
       e.printStackTrace();
       e.printStackTrace(System.out);
     }

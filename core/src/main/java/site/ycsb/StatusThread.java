@@ -250,9 +250,10 @@ public class StatusThread extends Thread {
     }
 
     final long gcs = Utils.getGCTotalCollectionCount();
-    measurements.measure("GCS", (int) (gcs - lastGCCount));
+    // GC counters can appear to go backwards across gem5 checkpoint restore.
+    measurements.measure("GCS", (int) Math.max(0L, gcs - lastGCCount));
     final long gcTime = Utils.getGCTotalTime();
-    measurements.measure("GCS_TIME", (int) (gcTime - lastGCTime));
+    measurements.measure("GCS_TIME", (int) Math.max(0L, gcTime - lastGCTime));
     lastGCCount = gcs;
     lastGCTime = gcTime;
   }

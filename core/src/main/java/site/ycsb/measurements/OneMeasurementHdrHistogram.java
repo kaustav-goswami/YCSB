@@ -98,7 +98,9 @@ public class OneMeasurementHdrHistogram extends OneMeasurement {
    * Using {@link Recorder} to support concurrent updates to histogram.
    */
   public void measure(int latencyInMicros) {
-    histogram.recordValue(latencyInMicros);
+    // HdrHistogram rejects / corrupts on negatives; clamp for simulators with
+    // non-monotonic clocks (e.g. gem5 after checkpoint or CPU model switch).
+    histogram.recordValue(Math.max(0, latencyInMicros));
   }
 
   /**
@@ -168,9 +170,11 @@ public class OneMeasurementHdrHistogram extends OneMeasurement {
 
   private Histogram getIntervalHistogramAndAccumulate() {
     Histogram intervalHistogram = histogram.getIntervalHistogram();
-    // add this to the total time histogram.
+    // Accumulate into a plain Histogram copy. Keeping ConcurrentHistogram
+    // snapshots as the running total can corrupt under auto-ranging races
+    // (seen as IndexOutOfBoundsException index=-2147483648 on gem5).
     if (totalHistogram == null) {
-      totalHistogram = intervalHistogram;
+      totalHistogram = intervalHistogram.copy();
     } else {
       totalHistogram.add(intervalHistogram);
     }
